@@ -280,7 +280,11 @@ class DACS(UDADecorator):
     def get_pseudo_label_and_weight(self, logits):
         ema_softmax = torch.softmax(logits.detach(), dim=1)
         pseudo_prob, pseudo_label = torch.max(ema_softmax, dim=1)
+
+#############################調整threshold大小###################################
         ps_large_p = pseudo_prob.ge(self.pseudo_threshold).long() == 1
+#############################調整threshold大小###################################
+
         ps_size = np.size(np.array(pseudo_label.cpu()))
         pseudo_weight = torch.sum(ps_large_p).item() / ps_size
         pseudo_weight = pseudo_weight * torch.ones(

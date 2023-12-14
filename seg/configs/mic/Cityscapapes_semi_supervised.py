@@ -109,7 +109,7 @@ runner = dict(type='IterBasedRunner', max_iters=80000)
 checkpoint_config = dict(by_epoch=False, interval=40000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysis
-name = 'cityscapes_50:50_tua=0.968_fmask_ratio=090_Mix_FD'
+name = 'cityscapes_12:88_tua=0.968_fmask_ratio=800_Mix_FD'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'
