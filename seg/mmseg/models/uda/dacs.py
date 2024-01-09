@@ -100,6 +100,7 @@ class DACS(UDADecorator):
         self.enable_masking = self.mask_mode is not None
         self.print_grad_magnitude = cfg['print_grad_magnitude']
         assert self.mix == 'class'
+        #self.fmask_ratio=cfg[fmask_ratio]
 
         self.debug_fdist_mask = None
         self.debug_gt_rescale = None
@@ -277,12 +278,15 @@ class DACS(UDADecorator):
         if self.mic is not None:
             self.mic.debug = debug
 
-    def get_pseudo_label_and_weight(self, logits):
+    def get_pseudo_label_and_weight(self, logits,iter):
         ema_softmax = torch.softmax(logits.detach(), dim=1)
         pseudo_prob, pseudo_label = torch.max(ema_softmax, dim=1)
 
 #############################調整threshold大小###################################
         ps_large_p = pseudo_prob.ge(self.pseudo_threshold).long() == 1
+        # ps_large_p = pseudo_prob.ge(self.pseudo_threshold * (1 - iter / 40000)).long() == 1
+        # if iter%100 == 0:
+        #     print(self.pseudo_threshold * (1 - iter / 40000))
 #############################調整threshold大小###################################
 
         ps_size = np.size(np.array(pseudo_label.cpu()))
@@ -432,7 +436,7 @@ class DACS(UDADecorator):
             seg_debug['Target'] = self.get_ema_model().debug_output
 
             pseudo_label, pseudo_weight = self.get_pseudo_label_and_weight(
-                ema_logits)
+                ema_logits,self.local_iter)
             del ema_logits
 
             pseudo_weight = self.filter_valid_pseudo_region(
@@ -500,7 +504,7 @@ class DACS(UDADecorator):
                 mixed_lbl,
                 seg_weight=mixed_seg_weight,
                 return_feat=False,
-                mask_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.9, 
+                mask_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.8, 
                                 f3_ratio=0, f4_ratio=0)
             )
             seg_debug['Feature_Mask'] = self.get_model().debug_output
@@ -538,7 +542,7 @@ class DACS(UDADecorator):
             vis_trg_img = torch.clamp(denorm(target_img, means, stds), 0, 1)
             vis_mixed_img = torch.clamp(denorm(mixed_img, means, stds), 0, 1)
             #for j in range(batch_size):
-            for j in range(2):
+            for j in range(1):
                 rows, cols = 2, 5
                 fig, axs = plt.subplots(
                     rows,
@@ -607,7 +611,7 @@ class DACS(UDADecorator):
                     seg_debug['Target']['Pseudo W.'] = mixed_seg_weight.cpu(
                     ).numpy()
                 #for j in range(batch_size):
-                for j in range(2):
+                for j in range(1):
                     cols = len(seg_debug)
                     rows = max(len(seg_debug[k]) for k in seg_debug.keys())
                     fig, axs = plt.subplots(

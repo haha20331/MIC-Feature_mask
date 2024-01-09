@@ -10,7 +10,7 @@ _base_ = [
     # DAFormer Network Architecture
     '../_base_/models/city_daformer_sepaspp_mitb5.py',
     # GTA->Cityscapes High-Resolution Data Loading
-    '../_base_/datasets/cityscapes_semi_supervised.py',
+    '../_base_/datasets/25_75_cityscapes_semi_supervised.py',
     # DAFormer Self-Training
     '../_base_/uda/city_dacs_a999_fdthings.py',
     # AdamW Optimizer
@@ -102,6 +102,9 @@ optimizer = dict(
 # feature_mask_ratio = dict(
 #     flag=True, f1_ratio=0, f2_ratio=0, 
 #     f3_ratio=0, f4_ratio=0, mask_type="ricky")
+
+#fmask_ratio=dict(flag=True, f1_ratio=0.8, f2_ratio=0, f3_ratio=0, f4_ratio=0)
+
 n_gpus = 1
 gpu_model = 'NVIDIATITANRTX'
 runner = dict(type='IterBasedRunner', max_iters=80000)
@@ -109,7 +112,7 @@ runner = dict(type='IterBasedRunner', max_iters=80000)
 checkpoint_config = dict(by_epoch=False, interval=40000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysis
-name = 'cityscapes_12:88_tua=0.968_fmask_ratio=800_Mix_FD'
+name = 'cityscapes_25:75_tua=0.968_fmask_ratio=080'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'
