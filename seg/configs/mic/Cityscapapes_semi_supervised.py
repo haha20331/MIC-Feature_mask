@@ -89,7 +89,11 @@ uda = dict(
     #     type='block', mask_ratio=0.7, mask_block_size=64, _delete_=True),
 ######################### mask_block_size = 圖片經過transform後的大小/16 #########################
     mask_generator=dict(
-        type='block', mask_ratio=0.7, mask_block_size=64, _delete_=True))
+        type='block', mask_ratio=0.7, mask_block_size=64, _delete_=True),
+
+######################### feature mask ratio ##########################
+    feature_mask_ratio=dict(flag=True, f1_ratio=1, f2_ratio=0, 
+                            f3_ratio=0, f4_ratio=0))
 # Optimizer Hyperparameters
 optimizer_config = None
 optimizer = dict(
@@ -99,11 +103,6 @@ optimizer = dict(
             head=dict(lr_mult=10.0),
             pos_block=dict(decay_mult=0.0),
             norm=dict(decay_mult=0.0))))
-# feature_mask_ratio = dict(
-#     flag=True, f1_ratio=0, f2_ratio=0, 
-#     f3_ratio=0, f4_ratio=0, mask_type="ricky")
-
-#fmask_ratio=dict(flag=True, f1_ratio=0.8, f2_ratio=0, f3_ratio=0, f4_ratio=0)
 
 n_gpus = 1
 gpu_model = 'NVIDIATITANRTX'
@@ -111,8 +110,8 @@ runner = dict(type='IterBasedRunner', max_iters=80000)
 # Logging Configuration
 checkpoint_config = dict(by_epoch=False, interval=40000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
-# Meta Information for Result Analysis
-name = 'cityscapes_25:75_tua=0.968_fmask_ratio=080'
+# Meta Information for Result Analysi
+name = 'cityscapes_25:75_tua=0.968_fmask_ratio=(10)00'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'

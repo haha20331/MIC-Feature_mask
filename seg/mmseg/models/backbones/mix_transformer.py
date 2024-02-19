@@ -423,7 +423,7 @@ class MixVisionTransformer(BaseModule):
     #                 feature[:,:, x:x+patch_size, y:y+patch_size] = feature[:,:, x:x+patch_size, y:y+patch_size] * mask
     #     return feature
     
-    def mask_feature_random_patch(self,feature,ratio):    #ricky
+    def mask_feature_random_patch(self,feature,ratio):    #將feature 以patch 為單位mask
         shape=feature.shape
         patch_num = 16
         patch_size=int(shape[3]/patch_num)
@@ -438,15 +438,18 @@ class MixVisionTransformer(BaseModule):
         return feature_mask
 
 
-    def forward_features(self, x, mask_ratio=dict(flag=False)):
+    def forward_features(self, x, feature_mask_ratio=dict(flag=False)):
         B = x.shape[0]
         outs = []
-############## mask_ratio 取得!!!!! ###################
-#        if mask_ratio.get('flag'): 
-#            print(mask_ratio.get('ratio'))
-#        else: 
-#            print("None")
-############## mask_ratio 取得!!!!! ###################
+############## feature_mask_ratio 取得!!!!! ###################
+        # if feature_mask_ratio.get('flag'): 
+        #     print(feature_mask_ratio.get('f1_ratio'))
+        #     print(feature_mask_ratio.get('f2_ratio'))
+        #     print(feature_mask_ratio.get('f3_ratio'))
+        #     print(feature_mask_ratio.get('f4_ratio'))
+        # else: 
+        #     print("None")
+############## feature_mask_ratio 取得!!!!! ###################
 
         # stage 1
         x, H, W = self.patch_embed1(x)
@@ -454,9 +457,9 @@ class MixVisionTransformer(BaseModule):
             x = blk(x, H, W)
         x = self.norm1(x)
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
-        if mask_ratio.get('flag') and mask_ratio.get('f1_ratio')!=0: 
-            #x=self.mask_feature_random_pixel(x,mask_ratio.get('f1_ratio'))
-            x=self.mask_feature_random_patch(x,mask_ratio.get('f1_ratio'))
+        if feature_mask_ratio.get('flag') and feature_mask_ratio.get('f1_ratio')!=0: 
+            #x=self.mask_feature_random_pixel(x,feature_mask_ratio.get('f1_ratio'))
+            x=self.mask_feature_random_patch(x,feature_mask_ratio.get('f1_ratio'))
 
         outs.append(x)
 
@@ -466,9 +469,9 @@ class MixVisionTransformer(BaseModule):
             x = blk(x, H, W)
         x = self.norm2(x)
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
-        if mask_ratio.get('flag') and mask_ratio.get('f2_ratio')!=0: 
-            #x=self.mask_feature_random_pixel(x,mask_ratio.get('f2_ratio'))
-            x=self.mask_feature_random_patch(x,mask_ratio.get('f2_ratio'))
+        if feature_mask_ratio.get('flag') and feature_mask_ratio.get('f2_ratio')!=0: 
+            #x=self.mask_feature_random_pixel(x,feature_mask_ratio.get('f2_ratio'))
+            x=self.mask_feature_random_patch(x,feature_mask_ratio.get('f2_ratio'))
         outs.append(x)
 
         # stage 3
@@ -477,9 +480,9 @@ class MixVisionTransformer(BaseModule):
             x = blk(x, H, W)
         x = self.norm3(x)
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
-        if mask_ratio.get('flag') and mask_ratio.get('f3_ratio')!=0: 
-            #x=self.mask_feature_random_pixel(x,mask_ratio.get('f3_ratio'))
-            x=self.mask_feature_random_patch(x,mask_ratio.get('f3_ratio'))
+        if feature_mask_ratio.get('flag') and feature_mask_ratio.get('f3_ratio')!=0: 
+            #x=self.mask_feature_random_pixel(x,feature_mask_ratio.get('f3_ratio'))
+            x=self.mask_feature_random_patch(x,feature_mask_ratio.get('f3_ratio'))
 
         outs.append(x)
         
@@ -490,9 +493,9 @@ class MixVisionTransformer(BaseModule):
             x = blk(x, H, W)
         x = self.norm4(x)
         x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2).contiguous()
-        if mask_ratio.get('flag') and mask_ratio.get('f4_ratio')!=0: 
-            #x=self.mask_feature_random_pixel(x,mask_ratio.get('f4_ratio'))
-            x=self.mask_feature_random_patch(x,mask_ratio.get('f4_ratio'))
+        if feature_mask_ratio.get('flag') and feature_mask_ratio.get('f4_ratio')!=0: 
+            #x=self.mask_feature_random_pixel(x,feature_mask_ratio.get('f4_ratio'))
+            x=self.mask_feature_random_patch(x,feature_mask_ratio.get('f4_ratio'))
 
         outs.append(x)
         
@@ -500,8 +503,8 @@ class MixVisionTransformer(BaseModule):
 
         return outs
 
-    def forward(self, x, mask_ratio=dict(flag=False)):
-        x = self.forward_features(x, mask_ratio)
+    def forward(self, x, feature_mask_ratio=dict(flag=False)):
+        x = self.forward_features(x, feature_mask_ratio)
         # x = self.head(x)
         return x
 

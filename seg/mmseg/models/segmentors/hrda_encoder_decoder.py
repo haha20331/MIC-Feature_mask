@@ -96,9 +96,9 @@ class HRDAEncoderDecoder(EncoderDecoder):
         self.crop_coord_divisible = crop_coord_divisible
         self.blur_hr_crop = blur_hr_crop
 
-    def extract_unscaled_feat(self, img, mask_ratio=dict(flag=False)):
+    def extract_unscaled_feat(self, img, feature_mask_ratio=dict(flag=False)):
         ################試著多傳一個參數進去backbone##################
-        x = self.backbone(img, mask_ratio)
+        x = self.backbone(img, feature_mask_ratio)
         if self.with_neck:
             x = self.neck(x)
         return x
@@ -204,7 +204,7 @@ class HRDAEncoderDecoder(EncoderDecoder):
                 align_corners=self.align_corners)
         return out
 
-    def _forward_train_features(self, img, mask_ratio=dict(flag=False)):
+    def _forward_train_features(self, img, feature_mask_ratio=dict(flag=False)):
         mres_feats = []
         self.decode_head.debug_output = {}
         assert len(self.scales) <= 2, 'Only up to 2 scales are supported.'
@@ -230,7 +230,7 @@ class HRDAEncoderDecoder(EncoderDecoder):
                 self.decode_head.debug_output[f'Img {i} Scale {s}'] = \
                     scaled_img.detach()
             ########## extract_unscaled_feat 就是把圖丟進backbone和neck得到feature ############
-            mres_feats.append(self.extract_unscaled_feat(scaled_img, mask_ratio))
+            mres_feats.append(self.extract_unscaled_feat(scaled_img, feature_mask_ratio))
         return mres_feats, prob_vis
 
     def forward_train(self,
@@ -240,7 +240,7 @@ class HRDAEncoderDecoder(EncoderDecoder):
                       seg_weight=None,
                       return_feat=False,
                       return_logits=False,
-                      mask_ratio=dict(flag=False)):
+                      feature_mask_ratio=dict(flag=False)):
         """Forward function for training.
 
         Args:
@@ -259,7 +259,7 @@ class HRDAEncoderDecoder(EncoderDecoder):
         self.update_debug_state()
         losses = dict()
 ########## 是F1~F4 + scale ###################
-        mres_feats, prob_vis = self._forward_train_features(img, mask_ratio)
+        mres_feats, prob_vis = self._forward_train_features(img, feature_mask_ratio)
 ########## 是F1~F4 + scale ################### mres_feats 是經過Encoder後的feature
         for i, s in enumerate(self.scales):
             if return_feat and self.feature_scale in \

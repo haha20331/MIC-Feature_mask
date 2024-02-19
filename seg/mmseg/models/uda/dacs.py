@@ -80,6 +80,7 @@ class DACS(UDADecorator):
 
     def __init__(self, **cfg):
         super(DACS, self).__init__(**cfg)
+        self.feature_mask_ratio = cfg['feature_mask_ratio']
         self.local_iter = 0
         self.max_iters = cfg['max_iters']
         self.source_only = cfg['source_only']
@@ -369,32 +370,8 @@ class DACS(UDADecorator):
         seg_debug['Source'] = self.get_model().debug_output
         clean_loss, clean_log_vars = self._parse_losses(clean_losses)
         log_vars.update(clean_log_vars)
-########### loss weight 15~85 #############
-        # loss_weight = int(self.local_iter/500)*0.05+0.1
-        # #loss_weight = (self.local_iter+1)/20000
-        # if loss_weight >= 0.85:
-        #     loss_weight=0.85
-###########################################
-
-########### loss weight 85~15 #############
-        # if self.local_iter > 500 :
-        #     loss_weight = 0.9-int(self.local_iter/500)*0.05
-        #     #loss_weight = (self.local_iter+1)/20000
-        #     if loss_weight <= 0.15:
-        #         loss_weight=0.15
-        # else :
-        #     loss_weight=0.15
-###########################################
-        # loss_weight=1
-
-        # if self.local_iter%50 == 0:
-        #     print(loss_weight)
-##########################################    Source    ##################################
-        #test
-        #clean_loss = clean_loss*0.5
         clean_loss.backward(retain_graph=self.enable_fdist)
 
-###########################################################################################
         if self.print_grad_magnitude:
             params = self.get_model().backbone.parameters()
             seg_grads = [
@@ -490,29 +467,26 @@ class DACS(UDADecorator):
             mix_losses = add_prefix(mix_losses, 'mix')
             mix_loss, mix_log_vars = self._parse_losses(mix_losses)
             log_vars.update(mix_log_vars)
-            # test
-            #mix_loss=mix_loss*0.5*0.5
             mix_loss.backward()
 ############################################################
 
 
 ############## Feature mask功能 ###############
 ############## 用mask_ratio調整feature mask比例 #############
+            # feature_mask_ratio = self.feature_mask_ratio
+            # print(feature_mask_ratio['flag'],feature_mask_ratio['f1_ratio'],feature_mask_ratio['f2_ratio'],feature_mask_ratio['f4_ratio'])
             feature_mask_losses = self.get_model().forward_train(
                 mixed_img,
                 img_metas,
                 mixed_lbl,
                 seg_weight=mixed_seg_weight,
                 return_feat=False,
-                mask_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.8, 
-                                f3_ratio=0, f4_ratio=0)
+                feature_mask_ratio = self.feature_mask_ratio
             )
             seg_debug['Feature_Mask'] = self.get_model().debug_output
             feature_mask_losses = add_prefix(feature_mask_losses, 'feature_mask')
             feature_mask_loss, feature_mask_log_vars = self._parse_losses(feature_mask_losses)
             log_vars.update(feature_mask_log_vars)
-            # test
-            #mask_mix_loss=mask_mix_loss*0.25*0.5
             feature_mask_loss.backward()
 #############################################################
 
@@ -527,8 +501,6 @@ class DACS(UDADecorator):
             masked_loss = add_prefix(masked_loss, 'masked')
             masked_loss, masked_log_vars = self._parse_losses(masked_loss)
             log_vars.update(masked_log_vars)
-            # test
-            #masked_loss=masked_loss*0.25*0.5
             masked_loss.backward()
 #############################################################
 
