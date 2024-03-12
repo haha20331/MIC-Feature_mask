@@ -405,7 +405,7 @@ class DACS(UDADecorator):
         seg_debug['Source'] = self.get_model().debug_output
         clean_loss, clean_log_vars = self._parse_losses(clean_losses)
         log_vars.update(clean_log_vars)
-        clean_loss.backward(retain_graph=self.enable_fdist)
+        # clean_loss.backward(retain_graph=self.enable_fdist)
 
         if self.print_grad_magnitude:
             params = self.get_model().backbone.parameters()
@@ -421,6 +421,7 @@ class DACS(UDADecorator):
                                                       src_feat)
             log_vars.update(add_prefix(feat_log, 'src'))
 ############################################    FDLoss    ############################################
+            feat_loss = clean_loss + feat_loss
             feat_loss.backward()
 ############################################    FDLoss    ############################################
             if self.print_grad_magnitude:
