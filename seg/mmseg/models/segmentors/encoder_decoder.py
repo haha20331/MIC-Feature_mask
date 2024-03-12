@@ -146,10 +146,13 @@ class EncoderDecoder(BaseSegmentor):
         """Run forward function and calculate loss for decode head in
         training."""
         losses = dict()
+        
+################### 可能在此處取得predict ####################
         loss_decode = self.decode_head.forward_train(x, img_metas,
                                                      gt_semantic_seg,
                                                      self.train_cfg,
                                                      seg_weight, return_logits)
+################### 可能在此處取得predict ####################
 
         losses.update(add_prefix(loss_decode, 'decode'))
         return losses

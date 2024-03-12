@@ -92,8 +92,9 @@ uda = dict(
         type='block', mask_ratio=0.7, mask_block_size=64, _delete_=True),
 
 ######################### feature mask ratio ##########################
-    feature_mask_ratio=dict(flag=True, f1_ratio=1, f2_ratio=0, 
-                            f3_ratio=0, f4_ratio=0))
+    mask_feature_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.7, 
+                            f3_ratio=0, f4_ratio=0),
+    new_loss_flag=True)
 # Optimizer Hyperparameters
 optimizer_config = None
 optimizer = dict(
@@ -111,7 +112,8 @@ runner = dict(type='IterBasedRunner', max_iters=80000)
 checkpoint_config = dict(by_epoch=False, interval=40000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysi
-name = 'cityscapes_25:75_tua=0.968_fmask_ratio=(10)00'
+name = 'cityscapes_25:75_tua=0.968_NewLoss_fmask_ratio=070'
+#name = 'test_return_predict'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'

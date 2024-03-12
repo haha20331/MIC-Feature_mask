@@ -204,6 +204,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
         losses = self.losses(seg_logits, gt_semantic_seg, seg_weight)
         if return_logits:
             losses['logits'] = seg_logits
+################### 假設seg_logits是predict 試著return seg_logits ####################
         return losses
 
     def forward_test(self, inputs, img_metas, test_cfg):

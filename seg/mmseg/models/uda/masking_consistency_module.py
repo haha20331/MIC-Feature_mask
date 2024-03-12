@@ -28,6 +28,7 @@ class MaskingConsistencyModule(Module):
         self.mask_pseudo_threshold = cfg['mask_pseudo_threshold']
         self.mask_lambda = cfg['mask_lambda']
         self.mask_gen = build_mask_generator(cfg['mask_generator'])
+        self.new_loss_flag = cfg['new_loss_flag']
 
         assert self.mask_mode in [
             'separate', 'separatesrc', 'separatetrg', 'separateaug',
@@ -138,7 +139,9 @@ class MaskingConsistencyModule(Module):
             img_metas,
             masked_lbl,
             seg_weight=masked_seg_weight,
+            return_logits=self.new_loss_flag,
         )
+        
         if self.mask_lambda != 1:
             masked_loss['decode.loss_seg'] *= self.mask_lambda
 

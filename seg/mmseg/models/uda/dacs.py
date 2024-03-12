@@ -26,9 +26,13 @@ import torch
 import cv2
 from matplotlib import pyplot as plt
 from timm.models.layers import DropPath
+import torch.nn as nn
 from torch.nn import functional as F
 from torch.nn.modules.dropout import _DropoutNd
+from ..builder import build_loss
+from ..losses import accuracy
 
+from mmseg.ops import resize
 from mmseg.core import add_prefix
 from mmseg.models import UDA, HRDAEncoderDecoder, build_segmentor
 from mmseg.models.segmentors.hrda_encoder_decoder import crop
@@ -80,7 +84,7 @@ class DACS(UDADecorator):
 
     def __init__(self, **cfg):
         super(DACS, self).__init__(**cfg)
-        self.feature_mask_ratio = cfg['feature_mask_ratio']
+        
         self.local_iter = 0
         self.max_iters = cfg['max_iters']
         self.source_only = cfg['source_only']
@@ -102,6 +106,9 @@ class DACS(UDADecorator):
         self.print_grad_magnitude = cfg['print_grad_magnitude']
         assert self.mix == 'class'
         #self.fmask_ratio=cfg[fmask_ratio]
+
+        self.mask_feature_ratio = cfg['mask_feature_ratio']
+        self.new_loss_flag = cfg['new_loss_flag']
 
         self.debug_fdist_mask = None
         self.debug_gt_rescale = None
@@ -278,6 +285,34 @@ class DACS(UDADecorator):
             self.get_ema_model().debug = debug
         if self.mic is not None:
             self.mic.debug = debug
+        
+
+    def losses(self, seg_logit, seg_label, seg_weight=None):
+        """Compute segmentation loss."""
+        loss = dict()
+        seg_logit = resize(
+            input=seg_logit,
+            size=seg_label.shape[2:],
+            mode='bilinear',
+            align_corners=False)
+        # if self.sampler is not None:
+        #     seg_weight = self.sampler.sample(seg_logit, seg_label)
+        seg_label = seg_label.squeeze(1)
+        loss_decode=dict(
+                     type='CrossEntropyLoss',
+                     use_sigmoid=False,
+                     loss_weight=1.0)
+        self.loss_decode = build_loss(loss_decode)
+        self.loss_decode.debug = False
+        loss['loss_seg'] = self.loss_decode(
+            seg_logit,
+            seg_label,
+            weight=seg_weight,
+            ignore_index=255)
+        loss['acc_seg'] = accuracy(seg_logit, seg_label)
+        # if self.debug and hasattr(self.loss_decode, 'debug_output'):
+        #     self.debug_output.update(self.loss_decode.debug_output)
+        return loss
 
     def get_pseudo_label_and_weight(self, logits,iter):
         ema_softmax = torch.softmax(logits.detach(), dim=1)
@@ -461,8 +496,27 @@ class DACS(UDADecorator):
                 img_metas,
                 mixed_lbl,
                 seg_weight=mixed_seg_weight,
-                return_feat=False
+                return_feat=False,
+                return_logits=self.new_loss_flag
             )
+################# 取得mix predict "mix_logits" ###################
+            if self.new_loss_flag:
+                mix_logits = mix_losses['decode.logits'][0]
+                #print('mix_logits',mix_logits.size())
+                del mix_losses['decode.logits']
+
+                mix_logits = resize(
+                    input=mix_logits,
+                    size=mixed_lbl.shape[2:],
+                    mode='bilinear',
+                    align_corners=False)
+                student_pseudo_label, student_pseudo_weight = self.get_pseudo_label_and_weight(
+                    mix_logits,self.local_iter)
+                del mix_logits
+                student_pseudo_weight = self.filter_valid_pseudo_region(
+                    student_pseudo_weight, valid_pseudo_mask)
+                student_pseudo_label = student_pseudo_label.unsqueeze(1)
+################# 取得mix predict "mix_logits" ###################
             seg_debug['Mix'] = self.get_model().debug_output
             mix_losses = add_prefix(mix_losses, 'mix')
             mix_loss, mix_log_vars = self._parse_losses(mix_losses)
@@ -473,23 +527,44 @@ class DACS(UDADecorator):
 
 ############## Feature mask功能 ###############
 ############## 用mask_ratio調整feature mask比例 #############
-            # feature_mask_ratio = self.feature_mask_ratio
-            # print(feature_mask_ratio['flag'],feature_mask_ratio['f1_ratio'],feature_mask_ratio['f2_ratio'],feature_mask_ratio['f4_ratio'])
-            feature_mask_losses = self.get_model().forward_train(
+            if self.mask_feature_ratio['flag']:
+                mask_feature_losses = self.get_model().forward_train(
                 mixed_img,
                 img_metas,
                 mixed_lbl,
                 seg_weight=mixed_seg_weight,
                 return_feat=False,
-                feature_mask_ratio = self.feature_mask_ratio
-            )
-            seg_debug['Feature_Mask'] = self.get_model().debug_output
-            feature_mask_losses = add_prefix(feature_mask_losses, 'feature_mask')
-            feature_mask_loss, feature_mask_log_vars = self._parse_losses(feature_mask_losses)
-            log_vars.update(feature_mask_log_vars)
-            feature_mask_loss.backward()
-#############################################################
+                mask_feature_ratio = self.mask_feature_ratio,
+                return_logits=self.new_loss_flag
+                )
+################# 取得mask feature predict "mask_feature_logits" ###################
+                if self.new_loss_flag:
+                    mask_feature_logits = mask_feature_losses['decode.logits'][0]
+                    #print('mask_feature_logits',mask_feature_logits.size())
+                    del mask_feature_losses['decode.logits']
 
+                    smf_losses = dict()
+                    student_mask_feature_losses = self.losses(mask_feature_logits, student_pseudo_label, student_pseudo_weight)
+                    del mask_feature_logits
+                    smf_losses.update(add_prefix(student_mask_feature_losses, 'decode'))
+
+                    student_mask_feature_losses = add_prefix(smf_losses, 'student_masked_feature')
+                    student_mask_feature_loss, student_mask_feature_vars = self._parse_losses(student_mask_feature_losses)
+                    log_vars.update(student_mask_feature_vars)
+                    #student_mask_feature_loss.backward()
+################# 取得mask feature predict "mask_feature_logits" ###################
+
+                seg_debug['masked_feature'] = self.get_model().debug_output
+                mask_feature_losses = add_prefix(mask_feature_losses, 'masked_feature')
+                mask_feature_loss, mask_feature_log_vars = self._parse_losses(mask_feature_losses)
+                log_vars.update(mask_feature_log_vars)
+                mask_feature_loss = student_mask_feature_loss + mask_feature_loss
+                mask_feature_loss.backward()
+                if self.new_loss_flag:
+                    del student_mask_feature_loss
+                    del mask_feature_loss
+                    
+#############################################################
 
 ############## Masked Training ##############
         if self.enable_masking and self.mask_mode.startswith('separate'):
@@ -497,13 +572,77 @@ class DACS(UDADecorator):
                                    gt_semantic_seg, target_img,
                                    target_img_metas, valid_pseudo_mask,
                                    pseudo_label, pseudo_weight)
+            
+            if self.new_loss_flag:
+                mask_img_logits = masked_loss['decode.logits'][0]
+                #print('mask_img_logits',mask_img_logits.size())
+                del masked_loss['decode.logits']
+
+                smi_losses = dict()
+                student_mask_image_losses = self.losses(mask_img_logits, student_pseudo_label, student_pseudo_weight)
+                del mask_img_logits
+                smi_losses.update(add_prefix(student_mask_image_losses, 'decode'))
+
+                student_mask_image_losses = add_prefix(smi_losses, 'student_masked_image')
+                student_mask_image_loss, student_mask_image_vars = self._parse_losses(student_mask_image_losses)
+                log_vars.update(student_mask_image_vars)
+
             seg_debug.update(self.mic.debug_output)
-            masked_loss = add_prefix(masked_loss, 'masked')
+            masked_loss = add_prefix(masked_loss, 'masked_image')
             masked_loss, masked_log_vars = self._parse_losses(masked_loss)
             log_vars.update(masked_log_vars)
+            masked_loss = student_mask_image_loss + masked_loss
             masked_loss.backward()
+
+            if self.new_loss_flag:
+                del student_mask_image_loss
+                del masked_loss
+                del student_pseudo_weight
 #############################################################
 
+########################## New loss #########################################
+
+        # if self.new_loss_flag:
+        #     smf_losses = dict()
+        #     mix_logits = resize(
+        #         input=mix_logits,
+        #         size=mixed_lbl.shape[2:],
+        #         mode='bilinear',
+        #         align_corners=False)
+        #     student_pseudo_label, student_pseudo_weight = self.get_pseudo_label_and_weight(
+        #         mix_logits,self.local_iter)
+        #     del mix_logits
+        #     student_pseudo_weight = self.filter_valid_pseudo_region(
+        #         student_pseudo_weight, valid_pseudo_mask)
+        #     student_pseudo_label = student_pseudo_label.unsqueeze(1)
+
+        #     student_mask_feature_losses = self.losses(mask_feature_logits, student_pseudo_label, student_pseudo_weight)
+        #     del mask_feature_logits
+        #     smf_losses.update(add_prefix(student_mask_feature_losses, 'decode'))
+
+        #     student_mask_feature_losses = add_prefix(smf_losses, 'student_mask_feature')
+        #     student_mask_feature_loss, student_mask_feature_vars = self._parse_losses(student_mask_feature_losses)
+        #     log_vars.update(student_mask_feature_vars)
+        #     student_mask_feature_loss.backward()
+        #     print('success')
+
+
+            
+        #     # mask_feature_logits = resize(
+        #     #     input=mask_feature_logits,
+        #     #     size=mixed_lbl.shape[2:],
+        #     #     mode='bilinear',
+        #     #     align_corners=False)
+
+
+        #     mask_img_logits = resize(
+        #         input=mask_img_logits,
+        #         size=mixed_lbl.shape[2:],
+        #         mode='bilinear',
+        #         align_corners=False)
+            
+###################################################################
+            
             
 #############################    work_dir debug地方    #############################
         if self.local_iter % self.debug_img_interval == 0 and \
@@ -515,7 +654,7 @@ class DACS(UDADecorator):
             vis_mixed_img = torch.clamp(denorm(mixed_img, means, stds), 0, 1)
             #for j in range(batch_size):
             for j in range(1):
-                rows, cols = 2, 5
+                rows, cols = 2, 6
                 fig, axs = plt.subplots(
                     rows,
                     cols,
@@ -549,6 +688,9 @@ class DACS(UDADecorator):
                 if mixed_lbl is not None:
                     subplotimg(
                         axs[1][3], mixed_lbl[j], 'Seg Targ', cmap='cityscapes')
+                if student_pseudo_label is not None:    
+                    subplotimg(
+                        axs[1][5], student_pseudo_label[j], 'Student Seg Targ', cmap='cityscapes')
                 subplotimg(
                     axs[0][3],
                     mixed_seg_weight[j],
