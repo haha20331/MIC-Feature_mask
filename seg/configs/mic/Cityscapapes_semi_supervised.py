@@ -94,7 +94,8 @@ uda = dict(
 ######################### feature mask ratio ##########################
     mask_feature_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.7, 
                             f3_ratio=0, f4_ratio=0),
-    new_loss_flag=True)
+    student_consistency_loss_flag=True,
+    mask_img_and_feature_loss_flag=False,)
 # Optimizer Hyperparameters
 optimizer_config = None
 optimizer = dict(
@@ -107,13 +108,14 @@ optimizer = dict(
 
 n_gpus = 1
 gpu_model = 'NVIDIATITANRTX'
-runner = dict(type='IterBasedRunner', max_iters=80000)
+runner = dict(type='IterBasedRunner', max_iters=160000)
 # Logging Configuration
-checkpoint_config = dict(by_epoch=False, interval=40000, max_keep_ckpts=1)
+checkpoint_config = dict(by_epoch=False, interval=80000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysi
-name = 'cityscapes_25:75_tua=0.968_NewLoss_fmask_ratio=070'
-#name = 'test_return_predict'
+#name = 'cityscapes_25:75_mask_img&feature_fmask_ratio=070'
+name = 'cityscapes_25:75_SC(strong_aug2mask_img)_fmask_ratio=070'
+#name = 'test'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'

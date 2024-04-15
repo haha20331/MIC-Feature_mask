@@ -28,7 +28,6 @@ class MaskingConsistencyModule(Module):
         self.mask_pseudo_threshold = cfg['mask_pseudo_threshold']
         self.mask_lambda = cfg['mask_lambda']
         self.mask_gen = build_mask_generator(cfg['mask_generator'])
-        self.new_loss_flag = cfg['new_loss_flag']
 
         assert self.mask_mode in [
             'separate', 'separatesrc', 'separatetrg', 'separateaug',
@@ -61,7 +60,9 @@ class MaskingConsistencyModule(Module):
                  target_img_metas,
                  valid_pseudo_mask,
                  pseudo_label=None,
-                 pseudo_weight=None):
+                 pseudo_weight=None,
+                 mask_feature_ratio=dict(flag=False),
+                 return_logits=False):
         self.update_debug_state()
         self.debug_output = {}
         model.debug_output = {}
@@ -139,7 +140,8 @@ class MaskingConsistencyModule(Module):
             img_metas,
             masked_lbl,
             seg_weight=masked_seg_weight,
-            return_logits=self.new_loss_flag,
+            mask_feature_ratio = mask_feature_ratio,
+            return_logits = return_logits
         )
         
         if self.mask_lambda != 1:
