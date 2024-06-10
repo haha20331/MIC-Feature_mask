@@ -12,6 +12,7 @@ from .synthia import SynthiaDataset
 from .uda_dataset import UDADataset
 from .medLabeledDataset import MedLabeledDataset
 from .medUnlabeledDataset import MedUnlabeledDataset
+from .pascal import PascalContextDataset
 
 __all__ = [
     'CustomDataset',
@@ -29,4 +30,5 @@ __all__ = [
     'DarkZurichDataset',
     'MedLabeledDataset',
     'MedUnlabeledDataset',
+    'PascalContextDataset',
 ]

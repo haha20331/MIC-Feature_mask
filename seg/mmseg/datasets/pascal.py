@@ -20,13 +20,14 @@ class PascalContextDataset(CustomDataset):
     CLASSES = ('background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
                'bus', 'car', 'cat', 'chair', 'cow', 'table', 'dog', 'horse',
                'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train',
-               'tvmonitor', 'bag', 'bed', 'bench', 'book', 'building',
-               'cabinet', 'ceiling', 'cloth', 'computer', 'cup', 'door',
-               'fence', 'floor', 'flower', 'food', 'grass', 'ground',
-               'keyboard', 'light', 'mountain', 'mouse', 'curtain', 'platform',
-               'sign', 'plate', 'road', 'rock', 'shelves', 'sidewalk', 'sky',
-               'snow', 'bedclothes', 'track', 'tree', 'truck', 'wall', 'water',
-               'window', 'wood')
+               'tvmonitor')
+            #    , 'bag', 'bed', 'bench', 'book', 'building',
+            #    'cabinet', 'ceiling', 'cloth', 'computer', 'cup', 'door',
+            #    'fence', 'floor', 'flower', 'food', 'grass', 'ground',
+            #    'keyboard', 'light', 'mountain', 'mouse', 'curtain', 'platform',
+            #    'sign', 'plate', 'road', 'rock', 'shelves', 'sidewalk', 'sky',
+            #    'snow', 'bedclothes', 'track', 'tree', 'truck', 'wall', 'water',
+            #    'window', 'wood')
 
     PALETTE = [[120, 120, 120], [180, 120, 120], [6, 230, 230], [80, 50, 50],
                [4, 200, 3], [120, 120, 80], [140, 140, 140], [204, 5, 255],
@@ -44,11 +45,30 @@ class PascalContextDataset(CustomDataset):
                [255, 31, 0], [255, 224, 0], [153, 255, 0], [0, 0, 255],
                [255, 71, 0], [0, 235, 255], [0, 173, 255], [31, 0, 255]]
 
-    def __init__(self, split, **kwargs):
+    # # def __init__(self, split, **kwargs):
+    # def __init__(self, **kwargs):
+    #     ## 新增的
+    #     assert kwargs.get('split') in [None, 'train']
+    #     if 'split' in kwargs:
+    #         kwargs.pop('split')
+    #     ##
+    #     super(PascalContextDataset, self).__init__(
+    #         img_suffix='.jpg',
+    #         seg_map_suffix='.png',
+    #         # reduce_zero_label=False,
+    #         **kwargs)
+    #     # assert osp.exists(self.img_dir) and self.split is not None
+
+    def __init__(self,
+                 crop_pseudo_margins=None,
+                 img_suffix='.jpg',
+                 seg_map_suffix='.png',
+                 **kwargs):
+        assert kwargs.get('split') in [None, 'train']
+        if 'split' in kwargs:
+            kwargs.pop('split')
         super(PascalContextDataset, self).__init__(
             img_suffix='.jpg',
             seg_map_suffix='.png',
-            split=split,
-            reduce_zero_label=False,
+            split=None,
             **kwargs)
-        assert osp.exists(self.img_dir) and self.split is not None
