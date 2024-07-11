@@ -47,7 +47,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert GTA annotations to TrainIds')
     parser.add_argument('gta_path', help='gta data path')
-    parser.add_argument('--gt-dir', default='1464_gt', type=str)
+    parser.add_argument('--gt-dir', default='1_4_aug_gt', type=str)
     parser.add_argument('-o', '--out-dir', help='output path')
     parser.add_argument(
         '--nproc', default=4, type=int, help='number of process')

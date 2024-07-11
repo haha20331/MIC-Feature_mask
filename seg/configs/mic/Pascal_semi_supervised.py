@@ -10,7 +10,7 @@ _base_ = [
     # DAFormer Network Architecture
     '../_base_/models/pascal_daformer_sepaspp_mitb5.py',
     # GTA->Cityscapes High-Resolution Data Loading
-    '../_base_/datasets/1464_pascal_semi_supervised.py',
+    '../_base_/datasets/183_pascal_semi_supervised.py',
     # DAFormer Self-Training
     '../_base_/uda/pascal_dacs_a999_fdthings.py',
     # AdamW Optimizer
@@ -48,8 +48,8 @@ model = dict(
     test_cfg=dict(
         mode='slide',
         batched_slide=True,
-        stride=[64, 64],
-        crop_size=[128, 128]
+        stride=[128, 128],
+        crop_size=[512, 512]
         ))
 #64, 128
 data = dict(
@@ -108,7 +108,7 @@ uda = dict(
             # 'blur_flag': False,
         },
     A1_backward_flag = True,#常駐開
-    enable_fdist_flag = False,
+    enable_fdist_flag = True,
     )
 # Optimizer Hyperparameters
 optimizer_config = None
@@ -127,10 +127,10 @@ runner = dict(type='IterBasedRunner', max_iters=160000)
 checkpoint_config = dict(by_epoch=False, interval=80000, max_keep_ckpts=1)
 evaluation = dict(interval=500, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysi
-name = 'pascal_1464_fmask=070_SC'
+name = 'pascal_183_fmask=070_SC'
 # name = 'test'
 exp = 'basic'
-name_dataset = 'Cityscapes_semisupervised'
+name_dataset = 'Pascal_semisupervised'
 name_architecture = 'hrda1-512-0.1_daformer_sepaspp_sl_mitb5'
 name_encoder = 'mitb5'
 name_decoder = 'hrda1-512-0.1_daformer_sepaspp_sl'

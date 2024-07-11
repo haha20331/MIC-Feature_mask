@@ -565,7 +565,7 @@ class DACS(UDADecorator):
                 ################# 取得strong_aug predict "strong_aug_logits" ###################
                 if self.student_consistency_loss_flag:
                     strong_aug_logits = strong_aug_losses['decode.logits'][0]
-                    if (self.local_iter % self.debug_img_interval == 0 and not self.source_only) or self.student_mask_img_loss_flag:
+                    if (self.local_iter % self.debug_img_interval == 0 and not self.source_only) or self.student_consistency_loss_flag:
                         strong_aug_label, strong_aug_weight=self.get_student_pseudo_label(strong_aug_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
                         student_mix_pseudo_label = [None] * batch_size
                         student_mixed_seg_weight = strong_aug_weight.clone()
@@ -602,12 +602,12 @@ class DACS(UDADecorator):
             ################# 取得mix predict "mix_logits" ###################
             if self.student_consistency_loss_flag:
                 mix_logits = mix_losses['decode.logits'][0]
-                if (self.local_iter % self.debug_img_interval == 0 and not self.source_only) or self.student_mask_feature_loss_flag:
+                if (self.local_iter % self.debug_img_interval == 0 and not self.source_only):
                     mix_label, _ =self.get_student_pseudo_label(mix_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
                     #### mix_img_logits student內部一致性 ####
-                    if self.student_mix_img_loss_flag:
-                        student_mix_loss, student_mix_vars = self.cal_loss(mix_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_mix_image')
-                        log_vars.update(student_mix_vars)
+                if self.student_mix_img_loss_flag:
+                    student_mix_loss, student_mix_vars = self.cal_loss(mix_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_mix_image')
+                    log_vars.update(student_mix_vars)
                 del mix_logits, mix_losses['decode.logits']
             ##########################################################################
             seg_debug['Mix'] = self.get_model().debug_output
