@@ -14,7 +14,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
 def split_and_resize_tiff_PIL(input_img_path, input_mask_path, output_path, patch_size=1024, target_size=512):
-    green_threshold = 227
+    green_threshold = 200
     r_sub_g_gap = 5
     b_sub_g_gap = 5
     filename = input_img_path.split('/')[-1][:-4]

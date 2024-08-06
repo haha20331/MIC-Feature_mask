@@ -10,7 +10,7 @@ _base_ = [
     # DAFormer Network Architecture
     '../_base_/models/pascal_daformer_sepaspp_mitb5.py',
     # GTA->Cityscapes High-Resolution Data Loading
-    '../_base_/datasets/183_pascal_semi_supervised.py',
+    '../_base_/datasets/1_4_aug_pascal_semi_supervised.py',
     # DAFormer Self-Training
     '../_base_/uda/pascal_dacs_a999_fdthings.py',
     # AdamW Optimizer
@@ -93,7 +93,7 @@ uda = dict(
         type='block', mask_ratio=0.7, mask_block_size=32, _delete_=True),
 
 ######################### feature mask ratio ##########################
-    mask_feature_ratio=dict(flag=True, f1_ratio=0, f2_ratio=0.7, 
+    mask_feature_ratio=dict(flag=True, f1_ratio=0.5, f2_ratio=0, 
                             f3_ratio=0, f4_ratio=0),
     loss_weight = 1,
     student_consistency_loss_flag = True,#4個一起開
@@ -122,12 +122,12 @@ optimizer = dict(
 
 n_gpus = 1
 gpu_model = 'NVIDIATITANRTX'
-runner = dict(type='IterBasedRunner', max_iters=160000)
+runner = dict(type='IterBasedRunner', max_iters=35000)
 # Logging Configuration
-checkpoint_config = dict(by_epoch=False, interval=80000, max_keep_ckpts=1)
+checkpoint_config = dict(by_epoch=False, interval=50000, max_keep_ckpts=1)
 evaluation = dict(interval=500, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysi
-name = 'pascal_183_fmask=070_SC'
+name = 'pascal_1_4_aug_fmask=500_SC'
 # name = 'test'
 exp = 'basic'
 name_dataset = 'Pascal_semisupervised'
@@ -138,3 +138,4 @@ name_uda = 'dacs_a999_fdthings_rcs0.01-2.0_cpl2_m64-0.7-spta'
 name_opt = 'adamw_6e-05_pmTrue_poly10warm_1x2_40k'
 
 # For the other configurations used in the paper, please refer to experiment.py
+# CUDA_VISIBLE_DEVICES=0 python run_experiments.py --config configs/mic/Pascal_semi_supervised.py 

@@ -96,9 +96,9 @@ uda = dict(
                             f3_ratio=0, f4_ratio=0),
     loss_weight = 1,
     student_consistency_loss_flag = True,#4個一起開
-    student_mix_img_loss_flag = True,
-    student_mask_feature_loss_flag = False,
     student_mask_img_loss_flag = True,
+    student_mix_img_loss_flag = False,
+    student_mask_feature_loss_flag = True,
     mask_img_and_feature_loss_flag = False,#廢棄功能，常駐關
     A1_aug = {
             'color_jitter_flag': True,
@@ -126,7 +126,7 @@ runner = dict(type='IterBasedRunner', max_iters=160000)
 checkpoint_config = dict(by_epoch=False, interval=80000, max_keep_ckpts=1)
 evaluation = dict(interval=1000, metric=['mIoU', 'mDice'])
 # Meta Information for Result Analysi
-name = 'cityscapes_25:75_fmask=070_SC_maskImg+mix'
+name = 'cityscapes_25:75_fmask=070_SC_p^aug_to_p^mask_and_p^mix_mf'
 #name = 'test'
 exp = 'basic'
 name_dataset = 'Cityscapes_semisupervised'

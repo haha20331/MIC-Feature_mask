@@ -5,7 +5,7 @@ from .custom import CustomDataset
 @DATASETS.register_module()
 class MedUnlabeledDataset(CustomDataset):
     CLASSES = ('black', 'red')
-    PALETTE = [[0, 0, 0], [128, 0, 0]]
+    PALETTE = [[0, 0, 0], [255, 255, 255]]
     #CLASSES = ('None','black', 'red')
     #PALETTE = [[255,255,255], [0, 0, 0], [128, 0, 0]]
 

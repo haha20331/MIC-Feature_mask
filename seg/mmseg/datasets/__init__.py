@@ -13,6 +13,7 @@ from .uda_dataset import UDADataset
 from .medLabeledDataset import MedLabeledDataset
 from .medUnlabeledDataset import MedUnlabeledDataset
 from .pascal import PascalContextDataset
+from .camelyon import CamelyonDataset
 
 __all__ = [
     'CustomDataset',
@@ -31,4 +32,5 @@ __all__ = [
     'MedLabeledDataset',
     'MedUnlabeledDataset',
     'PascalContextDataset',
+    'CamelyonDataset'
 ]

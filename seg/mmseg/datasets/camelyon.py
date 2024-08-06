@@ -10,19 +10,21 @@ from .custom import CustomDataset
 
 
 @DATASETS.register_module()
-class MedLabeledDataset(CustomDataset):
-    CLASSES = ('black', 'red')
-    PALETTE = [[0, 0, 0], [255, 255, 255]]
+class CamelyonDataset(CustomDataset):
+    CLASSES = ('Normal', 'Benign','Tumor')
+    PALETTE = [[0, 0, 0],[128,128,128], [255, 255, 255]]
     #CLASSES = ('None','black', 'red')
     #PALETTE = [[255,255,255], [0, 0, 0], [128, 0, 0]]
 
-    def __init__(self, **kwargs):
+    def __init__(self, crop_pseudo_margins=None,**kwargs):
         assert kwargs.get('split') in [None, 'train']
         if 'split' in kwargs:
             kwargs.pop('split')
-        super(MedLabeledDataset, self).__init__(
+        super(CamelyonDataset, self).__init__(
             img_suffix='.png',
             #seg_map_suffix='_labelTrainIds.png',
             seg_map_suffix='.png',
             split=None,
             **kwargs)
+        self.pseudo_margins = crop_pseudo_margins
+        self.valid_mask_size = [1024, 1024]

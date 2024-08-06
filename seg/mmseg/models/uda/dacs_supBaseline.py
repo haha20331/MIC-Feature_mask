@@ -526,7 +526,7 @@ class DACS(UDADecorator):
             mix_masks = get_class_masks(gt_semantic_seg)
 
             
-################## Mix ##################
+# ################## Mix ##################
             for i in range(batch_size):
                 strong_parameters['mix'] = mix_masks[i]
                 mixed_img[i], mixed_lbl[i] = strong_transform(
@@ -537,123 +537,123 @@ class DACS(UDADecorator):
                 _, mixed_seg_weight[i] = strong_transform(
                     strong_parameters,
                     target=torch.stack((gt_pixel_weight[i], pseudo_weight[i])))
-################## wo Mix #########################
-            #for i in range(batch_size):
-                weak_parameters['mix'] = mix_masks[i]
-                strong_img[i], strong_lbl[i] = strong_transform(
-                    weak_parameters,
-                    data=torch.stack((target_img[i], target_img[i])),
-                    target=torch.stack(
-                        (pseudo_label[i], pseudo_label[i])))
-##############################################################
+# ################## wo Mix #########################
+#             #for i in range(batch_size):
+#                 weak_parameters['mix'] = mix_masks[i]
+#                 strong_img[i], strong_lbl[i] = strong_transform(
+#                     weak_parameters,
+#                     data=torch.stack((target_img[i], target_img[i])),
+#                     target=torch.stack(
+#                         (pseudo_label[i], pseudo_label[i])))
+# ##############################################################
             
             mixed_img = torch.cat(mixed_img)
             mixed_lbl = torch.cat(mixed_lbl)
-            strong_img = torch.cat(strong_img)
-            strong_lbl = torch.cat(strong_lbl)
+            # strong_img = torch.cat(strong_img)
+            # strong_lbl = torch.cat(strong_lbl)
 
-############## Train on strong augmentation images ##############
-            if self.student_consistency_loss_flag:
-                strong_aug_losses = self.get_model().forward_train(
-                    strong_img,
-                    img_metas,
-                    strong_lbl,
-                    seg_weight=pseudo_weight,
-                    return_feat=False,
-                    return_logits=self.student_consistency_loss_flag
-                )
-                ################# 取得strong_aug predict "strong_aug_logits" ###################
-                if self.student_consistency_loss_flag:
-                    strong_aug_logits = strong_aug_losses['decode.logits'][0]
-                    if (self.local_iter % self.debug_img_interval == 0 and not self.source_only) or self.student_consistency_loss_flag:
-                        strong_aug_label, strong_aug_weight=self.get_student_pseudo_label(strong_aug_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
-                        student_mix_pseudo_label = [None] * batch_size
-                        student_mixed_seg_weight = strong_aug_weight.clone()
-                        for i in range(batch_size):
-                            strong_parameters['mix'] = mix_masks[i]
-                            _, student_mix_pseudo_label[i] = strong_transform(strong_parameters,target=torch.stack((gt_semantic_seg[i], strong_aug_label[i])))
-                            _, student_mixed_seg_weight[i] = strong_transform(strong_parameters,target=torch.stack((gt_pixel_weight[i], strong_aug_weight[i])))
-                        student_mix_pseudo_label = torch.cat(student_mix_pseudo_label)
-                    del strong_aug_logits,strong_aug_losses['decode.logits']
-                del gt_pixel_weight
-                ##########################################################################
-                seg_debug['strong_aug'] = self.get_model().debug_output
-                strong_aug_losses = add_prefix(strong_aug_losses, 'strong_aug')
-                strong_aug_loss, strong_aug_log_vars = self._parse_losses(strong_aug_losses)
-                log_vars.update(strong_aug_log_vars)
-                # strong_aug_loss.backward()
-                if self.A1_backward_flag:
-                    strong_aug_loss.backward()
-                else:
-                    with torch.no_grad():
-                        strong_aug_loss.backward()
+# ############## Train on strong augmentation images ##############
+#             if self.student_consistency_loss_flag:
+#                 strong_aug_losses = self.get_model().forward_train(
+#                     strong_img,
+#                     img_metas,
+#                     strong_lbl,
+#                     seg_weight=pseudo_weight,
+#                     return_feat=False,
+#                     return_logits=self.student_consistency_loss_flag
+#                 )
+#                 ################# 取得strong_aug predict "strong_aug_logits" ###################
+#                 if self.student_consistency_loss_flag:
+#                     strong_aug_logits = strong_aug_losses['decode.logits'][0]
+#                     if (self.local_iter % self.debug_img_interval == 0 and not self.source_only) or self.student_consistency_loss_flag:
+#                         strong_aug_label, strong_aug_weight=self.get_student_pseudo_label(strong_aug_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
+#                         student_mix_pseudo_label = [None] * batch_size
+#                         student_mixed_seg_weight = strong_aug_weight.clone()
+#                         for i in range(batch_size):
+#                             strong_parameters['mix'] = mix_masks[i]
+#                             _, student_mix_pseudo_label[i] = strong_transform(strong_parameters,target=torch.stack((gt_semantic_seg[i], strong_aug_label[i])))
+#                             _, student_mixed_seg_weight[i] = strong_transform(strong_parameters,target=torch.stack((gt_pixel_weight[i], strong_aug_weight[i])))
+#                         student_mix_pseudo_label = torch.cat(student_mix_pseudo_label)
+#                     del strong_aug_logits,strong_aug_losses['decode.logits']
+#                 del gt_pixel_weight
+#                 ##########################################################################
+#                 seg_debug['strong_aug'] = self.get_model().debug_output
+#                 strong_aug_losses = add_prefix(strong_aug_losses, 'strong_aug')
+#                 strong_aug_loss, strong_aug_log_vars = self._parse_losses(strong_aug_losses)
+#                 log_vars.update(strong_aug_log_vars)
+#                 # strong_aug_loss.backward()
+#                 if self.A1_backward_flag:
+#                     strong_aug_loss.backward()
+#                 else:
+#                     with torch.no_grad():
+#                         strong_aug_loss.backward()
 ############################################################
 
 ############## Train on mixed images ##############
 ############## get model是拿hrda_encoder_decoder #############
-            mix_losses = self.get_model().forward_train(
-                mixed_img,
-                img_metas,
-                mixed_lbl,
-                seg_weight=mixed_seg_weight,
-                return_feat=False,
-                return_logits=self.student_consistency_loss_flag
-            )
-            ################# 取得mix predict "mix_logits" ###################
-            if self.student_consistency_loss_flag:
-                mix_logits = mix_losses['decode.logits'][0]
-                if (self.local_iter % self.debug_img_interval == 0 and not self.source_only):
-                    mix_label, _ =self.get_student_pseudo_label(mix_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
-                    #### mix_img_logits student內部一致性 ####
-                if self.student_mix_img_loss_flag:
-                    student_mix_loss, student_mix_vars = self.cal_loss(mix_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_mix_image')
-                    log_vars.update(student_mix_vars)
-                del mix_logits, mix_losses['decode.logits']
-            ##########################################################################
-            seg_debug['Mix'] = self.get_model().debug_output
-            mix_losses = add_prefix(mix_losses, 'mix')
-            mix_loss, mix_log_vars = self._parse_losses(mix_losses)
-            log_vars.update(mix_log_vars)
-            if self.student_consistency_loss_flag and self.student_mix_img_loss_flag:
-                mix_loss = self.loss_weight*(student_mix_loss + mix_loss)
-                del student_mix_loss
-            mix_loss.backward()
+            # mix_losses = self.get_model().forward_train(
+            #     mixed_img,
+            #     img_metas,
+            #     mixed_lbl,
+            #     seg_weight=mixed_seg_weight,
+            #     return_feat=False,
+            #     return_logits=self.student_consistency_loss_flag
+            # )
+            # ################# 取得mix predict "mix_logits" ###################
+            # if self.student_consistency_loss_flag:
+            #     mix_logits = mix_losses['decode.logits'][0]
+            #     if (self.local_iter % self.debug_img_interval == 0 and not self.source_only):
+            #         mix_label, _ =self.get_student_pseudo_label(mix_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
+            #         #### mix_img_logits student內部一致性 ####
+            #     if self.student_mix_img_loss_flag:
+            #         student_mix_loss, student_mix_vars = self.cal_loss(mix_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_mix_image')
+            #         log_vars.update(student_mix_vars)
+            #     del mix_logits, mix_losses['decode.logits']
+            # ##########################################################################
+            # seg_debug['Mix'] = self.get_model().debug_output
+            # mix_losses = add_prefix(mix_losses, 'mix')
+            # mix_loss, mix_log_vars = self._parse_losses(mix_losses)
+            # log_vars.update(mix_log_vars)
+            # if self.student_consistency_loss_flag and self.student_mix_img_loss_flag:
+            #     mix_loss = self.loss_weight*(student_mix_loss + mix_loss)
+            #     del student_mix_loss
+            # mix_loss.backward()
 ############################################################
 
 
 ############## Feature mask功能 ###############
 ############## 用mask_ratio調整feature mask比例 #############
 ##### mix image的feature mask ######
-            if self.mask_feature_ratio['flag']:
-                mask_feature_losses = self.get_model().forward_train(
-                mixed_img,
-                img_metas,
-                mixed_lbl,
-                seg_weight=mixed_seg_weight,
-                return_feat=False,
-                mask_feature_ratio = self.mask_feature_ratio,
-                return_logits=self.student_consistency_loss_flag
-                )
-                ################# 取得mask feature predict "mask_feature_logits" ###################
-                if self.student_consistency_loss_flag :
-                    mask_feature_logits = mask_feature_losses['decode.logits'][0]
-                    # ignore_mix_mask_feature_label = self.get_student_pseudo_label_ignore_mix(mask_feature_logits,mixed_lbl.shape[2:],dev,batch_size,strong_parameters,mix_masks)
-                    if self.local_iter % self.debug_img_interval == 0 and not self.source_only:
-                        mask_feature_label, _ =self.get_student_pseudo_label(mask_feature_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
-                    #### mask_feature_logits student內部一致性 ####
-                    if self.student_mask_feature_loss_flag:
-                        student_mask_feature_loss, student_mask_feature_vars = self.cal_loss(mask_feature_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_masked_feature')
-                        log_vars.update(student_mask_feature_vars)
-                    del mask_feature_logits,mask_feature_losses['decode.logits']
-                #############################################################################################
-                seg_debug['masked_feature'] = self.get_model().debug_output
-                mask_feature_losses = add_prefix(mask_feature_losses, 'masked_feature')
-                mask_feature_loss, mask_feature_log_vars = self._parse_losses(mask_feature_losses)
-                log_vars.update(mask_feature_log_vars)
-                if self.student_consistency_loss_flag and self.student_mask_feature_loss_flag:
-                    mask_feature_loss = self.loss_weight*(student_mask_feature_loss + mask_feature_loss)
-                    del student_mask_feature_loss
-                mask_feature_loss.backward()
+            # if self.mask_feature_ratio['flag']:
+            #     mask_feature_losses = self.get_model().forward_train(
+            #     mixed_img,
+            #     img_metas,
+            #     mixed_lbl,
+            #     seg_weight=mixed_seg_weight,
+            #     return_feat=False,
+            #     mask_feature_ratio = self.mask_feature_ratio,
+            #     return_logits=self.student_consistency_loss_flag
+            #     )
+            #     ################# 取得mask feature predict "mask_feature_logits" ###################
+            #     if self.student_consistency_loss_flag :
+            #         mask_feature_logits = mask_feature_losses['decode.logits'][0]
+            #         # ignore_mix_mask_feature_label = self.get_student_pseudo_label_ignore_mix(mask_feature_logits,mixed_lbl.shape[2:],dev,batch_size,strong_parameters,mix_masks)
+            #         if self.local_iter % self.debug_img_interval == 0 and not self.source_only:
+            #             mask_feature_label, _ =self.get_student_pseudo_label(mask_feature_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
+            #         #### mask_feature_logits student內部一致性 ####
+            #         if self.student_mask_feature_loss_flag:
+            #             student_mask_feature_loss, student_mask_feature_vars = self.cal_loss(mask_feature_logits,student_mix_pseudo_label,student_mixed_seg_weight,'student_masked_feature')
+            #             log_vars.update(student_mask_feature_vars)
+            #         del mask_feature_logits,mask_feature_losses['decode.logits']
+            #     #############################################################################################
+            #     seg_debug['masked_feature'] = self.get_model().debug_output
+            #     mask_feature_losses = add_prefix(mask_feature_losses, 'masked_feature')
+            #     mask_feature_loss, mask_feature_log_vars = self._parse_losses(mask_feature_losses)
+            #     log_vars.update(mask_feature_log_vars)
+            #     if self.student_consistency_loss_flag and self.student_mask_feature_loss_flag:
+            #         mask_feature_loss = self.loss_weight*(student_mask_feature_loss + mask_feature_loss)
+            #         del student_mask_feature_loss
+            #     mask_feature_loss.backward()
 ##### weak aug 的feature mask #####
             # if self.mask_feature_ratio['flag']:
             #     mask_feature_losses = self.get_model().forward_train(
@@ -688,30 +688,30 @@ class DACS(UDADecorator):
 #############################################################
 
 ############## Masked Image Training ##############
-        if self.enable_masking and self.mask_mode.startswith('separate'):
-            masked_loss = self.mic(self.get_model(), img, img_metas,
-                                   gt_semantic_seg, target_img,
-                                   target_img_metas, valid_pseudo_mask,
-                                   pseudo_label, pseudo_weight,return_logits=self.student_consistency_loss_flag)
-            ################# 取得mask image predict "mask_image_logits" ###################
-            if self.student_consistency_loss_flag:
-                mask_img_logits = masked_loss['decode.logits'][0]
-                if self.local_iter % self.debug_img_interval == 0 and not self.source_only:
-                    mask_img_label, _ =self.get_student_pseudo_label(mask_img_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
-                #### mask img 在student內的一致性正則化
-                if self.student_mask_img_loss_flag:
-                    student_mask_image_loss, student_mask_image_vars = self.cal_loss(mask_img_logits,strong_aug_label,strong_aug_weight,'student_masked_image')
-                    log_vars.update(student_mask_image_vars)
-                del mask_img_logits,masked_loss['decode.logits']
-            ##################################################################################
-            seg_debug.update(self.mic.debug_output)
-            masked_loss = add_prefix(masked_loss, 'masked_image')
-            masked_loss, masked_log_vars = self._parse_losses(masked_loss)
-            log_vars.update(masked_log_vars)
-            if self.student_consistency_loss_flag and self.student_mask_img_loss_flag:
-                masked_loss = self.loss_weight*(student_mask_image_loss + masked_loss)
-                del student_mask_image_loss
-            masked_loss.backward()
+        # if self.enable_masking and self.mask_mode.startswith('separate'):
+        #     masked_loss = self.mic(self.get_model(), img, img_metas,
+        #                            gt_semantic_seg, target_img,
+        #                            target_img_metas, valid_pseudo_mask,
+        #                            pseudo_label, pseudo_weight,return_logits=self.student_consistency_loss_flag)
+        #     ################# 取得mask image predict "mask_image_logits" ###################
+        #     if self.student_consistency_loss_flag:
+        #         mask_img_logits = masked_loss['decode.logits'][0]
+        #         if self.local_iter % self.debug_img_interval == 0 and not self.source_only:
+        #             mask_img_label, _ =self.get_student_pseudo_label(mask_img_logits,mixed_lbl.shape[2:],valid_pseudo_mask)
+        #         #### mask img 在student內的一致性正則化
+        #         if self.student_mask_img_loss_flag:
+        #             student_mask_image_loss, student_mask_image_vars = self.cal_loss(mask_img_logits,strong_aug_label,strong_aug_weight,'student_masked_image')
+        #             log_vars.update(student_mask_image_vars)
+        #         del mask_img_logits,masked_loss['decode.logits']
+        #     ##################################################################################
+        #     seg_debug.update(self.mic.debug_output)
+        #     masked_loss = add_prefix(masked_loss, 'masked_image')
+        #     masked_loss, masked_log_vars = self._parse_losses(masked_loss)
+        #     log_vars.update(masked_log_vars)
+        #     if self.student_consistency_loss_flag and self.student_mask_img_loss_flag:
+        #         masked_loss = self.loss_weight*(student_mask_image_loss + masked_loss)
+        #         del student_mask_image_loss
+        #     masked_loss.backward()
 #############################################################
                     
 #############################    work_dir debug地方    #############################
