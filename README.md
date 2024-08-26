@@ -1,12 +1,13 @@
-在本篇論文中，我們提出了一種觀點，即無監督域適應（Unsupervised Domain Adaptation, UDA）領域包含了半監督學習（Semi-Supervised Learning, SSL）領域。基於此，我們提出了一種基於UDA的SSL方法，即UDA-Based SSL，並將多種在UDA領域中的方法引用到本文的方法架構中。同時，我們提出了一種學生一致性框架（Student Consistency Framework），通過將一致性正則化引入教師-學生模型架構中，以強化模型的強健性。此外，我們提出了一種新穎的特徵擾動方式——特徵遮罩（Feature Masking），該方法參考了提出的圖像遮罩方法，以及多篇特徵擾動論文 ，使模型通過遮罩特徵來強化其對鄰近特徵的關聯能力。
+Semi-Supervised semantic segmentation techniques focus on the Consistency Regulation, Teacher-Student-based framework,  Pseudo-Labeling, and self-training. Unsupervised domain adaptation (UDA) and semi-supervision share many similarities regarding training dataset characteristics, commonly used techniques and loss functions. Starting from this point, we hypothesize that the UDA domain encompasses the semi-supervised domain. We explore the integration of cross-domain methods and propose UDA-Based SSL concept, providing new perspectives and opportunities for existing UDA techniques, enhancing performance, and expanding the range of applications. Recent trends in semi-supervised papers reveal that Consistency Regulation and the Teacher-Student model framework are foundational to the latest methods. We propose the new architecture "Student Consistency Framework" to further strengthen the Teacher-Student model framework
+using consistency regularization. This framework uses the teacher model to provide more accurate pseudo labels to the student model while implementing Consistency Regulation within the student model to enhance its robustness. Additionally, the robustness of the teacher model, updated through EMA, will also improve. Furthermore, addressing the current situation of relatively uniform feature perturbation, we propose a method for feature perturbation called Feature Masking. This method masks features processed by the Encoder on a patch-by-patch basis, forcing the model to infer the information of the masked parts from the unmasked parts, thereby strengthening the model's ability to understand the relationships between features.
 
-綜合上述所提到的概念，本篇方法的貢獻如下:
+Combining the concepts above, the contributions of this thesis are as follows:
 
-* UDA-Based SSL方法：本文提出了一種基於UDA的SSL方法，將兩個領域的方法概念進行融合，為現有技術提供了新的方向，從而提升性能並擴展應用範圍。
+* __UDA-Based SSL concept__: This thesis proposes a SSL method based on UDA, integrating concepts from both fields to provide new directions for existing technologies, thereby enhancing performance and expanding application scopes.
 
-* 學生一致性框架（Student Consistency Framework）：本文提出了一種通過一致性正則化強化學生模型架構的方法，使學生模型和教師模型的強健性提升，以提高整體準確率。
+* __Student Consistency Framework__: This thesis introduces a method to enhance the student model framework through Consistency Regulation, improving the robustness of both the student and teacher models, thus increasing overall accuracy.
 
-* 特徵遮罩（Feature Masking）方法：本文提出了一種以Patch為單位對特徵進行遮罩的方法，使模型能從有缺漏的特徵中預測出完整內容，從而強化模型對於特徵的關聯能力。
+* __Feature Masking Method__: This thesis proposes a method of masking features at the patch level, enabling the model to predict complete content from incomplete features, thereby strengthening the model's ability to relate features.
 
-* 實驗結果顯示卓越性能：實驗結果顯示，我們的方法在Cityscapes資料集標記比例1/2、 1/4 和1/8 ，Classic Pascal VOC 資料集標記比例Full、 1/2 和1/4 ，Blended Pascal VOC 資料集標記比例1/2、 1/4和1/8 上均取得了最先進（SOTA）的成績。此外，在消融實驗中，我們驗證了每個提出方法的有效性。
+* __Superior Experimental Performance__: Experimental results show that our method achieves state-of-the-art (SOTA) performance on the Cityscapes dataset with labeling ratios of 1/2, 1/4, and 1/8, the Classic Pascal VOC dataset with labeling ratios of Full, 1/2, and 1/4, and the Blended Pascal VOC dataset with labeling ratios of 1/2, 1/4, and 1/8. Additionally, in ablation studies, we validate the effectiveness of each proposed method. 
 ![full_framework](https://github.com/user-attachments/assets/39222f65-fd8b-477f-9c5e-6a953372cc35)
